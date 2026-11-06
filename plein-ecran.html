@@ -11,7 +11,7 @@
 <script>
 // L’adresse du catalogue Grist (mode intégré) est lue dans le paramètre ?u=
 // ou dans la constante ci-dessous une fois le partage public activé.
-var URL_GRIST = '';
+var URL_GRIST = 'https://grist.numerique.gouv.fr/o/lab17bis/7NeiCJkTBt7J/Catalogue-Lab-17-bis/p/2?embed=true';
 var p = new URLSearchParams(location.search).get('u') || URL_GRIST;
 if (/^https:\/\/grist\.numerique\.gouv\.fr\//.test(p)) document.getElementById('f').src = p;
 else document.body.innerHTML = '<p style="font-family:sans-serif;padding:2rem">Adresse du catalogue non configurée.</p>';
