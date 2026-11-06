@@ -1,0 +1,28 @@
+/* Surcouche minimale au DSFR pour l'affichage dans un cadre Grist */
+html, body { background: #fff; }
+.l17-pre { white-space: pre-wrap; }
+.l17-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.l17-filters { margin: 1.5rem 0 1rem; }
+.l17-tags { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+.l17-count { margin: 1rem 0; }
+.l17-files { list-style: none; padding: 0; margin: 1rem 0; }
+.l17-files li { margin-bottom: .5rem; }
+.l17-meta { margin: .5rem 0 1.5rem; }
+
+.l17-sections{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+.l17-vignette{object-fit:cover;object-position:top;background:#f6f6f6}
+.l17-vignette-detail{max-width:420px;border:1px solid #ddd}
+.fr-card__img .l17-vignette{display:block;width:100%;height:180px;max-height:180px;object-fit:cover;object-position:top}
+
+.lab-operator { display: flex; align-items: center; }
+.lab-logo-lab { height: 3rem; width: auto; display: block; }
+.lab-logo-academie { height: 7rem; width: auto; display: block; }
+.lab-header .fr-header__service-title a { background-image: none; }
+.lab-header .fr-header__body { padding: 0; }
+.fr-footer { margin-top: 3rem; }
+.acc-memo summary { cursor: pointer; }
