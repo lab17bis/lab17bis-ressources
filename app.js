@@ -19,11 +19,18 @@
     { name: 'fichier', title: 'Fichier(s) joint(s)', type: 'Attachments', optional: true },
     { name: 'image', title: 'Vignette (image jointe)', type: 'Attachments', optional: true },
     { name: 'lien', title: 'Lien externe', type: 'Text', optional: true },
+    { name: 'resume', title: 'En bref', type: 'Text', optional: true, description: 'Présentation en 1 à 2 phrases' },
+    { name: 'niveau', title: 'Niveau de difficulté', type: 'Choice,Text', optional: true, description: 'Facile / Intermédiaire / Avancé' },
+    { name: 'duree', title: 'Durée', type: 'Choice,Text', optional: true, description: 'Ex. Moins de 30 min' },
+    { name: 'participants', title: 'Taille du groupe', type: 'Choice,Text', optional: true, description: 'Ex. 5 à 12 personnes' },
+    { name: 'phase', title: 'Quand l’utiliser', type: 'ChoiceList,Text', optional: true, description: 'Phase du projet' },
+    { name: 'format', title: 'Format', type: 'Choice,Text', optional: true, description: 'Présentiel / Distanciel / Les deux' },
     { name: 'statut', title: 'Statut', type: 'Choice,Text', optional: true, description: 'Ex. Prototype' }
   ];
 
   var app = document.getElementById('app');
-  var state = { rows: [], q: '', type: '', tags: {}, mapped: false, demo: false };
+  var state = { rows: [], q: '', type: '', tags: {}, fac: {}, mapped: false, demo: false };
+  var FACETTES = [['niveau', 'Niveau'], ['duree', 'Durée'], ['participants', 'Groupe'], ['phase', 'Quand'], ['format', 'Format']];
   var tokenCache = null;
 
   // ---------- utilitaires ----------
@@ -74,7 +81,13 @@
       fichiers: toList(r.fichier),
       lien: r.lien ? absUrl(r.lien) : null,
       images: toList(r.image),
-      statut: r.statut ? String(r.statut) : ''
+      statut: r.statut ? String(r.statut) : '',
+      resume: r.resume || '',
+      niveau: r.niveau ? String(r.niveau) : '',
+      duree: r.duree ? String(r.duree) : '',
+      participants: r.participants ? String(r.participants) : '',
+      phase: toList(r.phase).map(String),
+      format: r.format ? String(r.format) : ''
     };
   }
 
@@ -148,7 +161,7 @@
       img.setAttribute('data-ok', '1');
       if (state.demo) { img.closest('.fr-card__header, p') && img.closest('.fr-card__header, p').remove(); return; }
       blobDe(img.getAttribute('data-att')).then(function (u) { img.src = u; }).catch(function (e) {
-        try { console.warn('[l17] vignette', e && e.message); document.title = 'vignette: ' + (e && e.message); } catch (x) {}
+        try { console.warn('[l17] vignette', e && e.message); } catch (x) {}
         var h = img.closest('.fr-card__header'); if (h) h.remove();
       });
     });
@@ -169,6 +182,13 @@
       return ia - ib || a.localeCompare(b, 'fr');
     });
   }
+  var ORDRE_FAC = { niveau: ['Facile', 'Intermédiaire', 'Avancé'], duree: ['Moins de 30 min', '30 min à 1 h 30', 'Demi-journée', 'Journée ou plus'], format: ['Présentiel', 'Distanciel', 'Les deux'] };
+  function valeursFacette(k) {
+    var seen = {}, out = [];
+    state.rows.forEach(function (r) { (Array.isArray(r[k]) ? r[k] : (r[k] ? [r[k]] : [])).forEach(function (v) { if (!seen[v]) { seen[v] = 1; out.push(v); } }); });
+    var o = ORDRE_FAC[k] || [];
+    return out.sort(function (a, b) { var ia = o.indexOf(a), ib = o.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b, 'fr', { numeric: true }); });
+  }
   function compteType(t) {
     return state.rows.filter(function (r) { return !t || r.type === t; }).length;
   }
@@ -178,8 +198,12 @@
     return state.rows.filter(function (r) {
       if (state.type && r.type !== state.type) return false;
       for (var i = 0; i < actifs.length; i++) if (r.tags.indexOf(actifs[i]) < 0) return false;
+      for (var f = 0; f < FACETTES.length; f++) {
+        var k = FACETTES[f][0], sel = state.fac[k];
+        if (sel && !(Array.isArray(r[k]) ? r[k].indexOf(sel) >= 0 : r[k] === sel)) return false;
+      }
       if (!q) return true;
-      return norm([r.titre, r.description, r.auteur, r.type, r.tags.join(' ')].join(' ')).indexOf(q) >= 0;
+      return norm([r.titre, r.resume, r.description, r.auteur, r.type, r.tags.join(' ')].join(' ')).indexOf(q) >= 0;
     }).sort(function (a, b) {
       var da = a.date ? a.date.getTime() : 0, db = b.date ? b.date.getTime() : 0;
       var oa = ORDRE.indexOf(a.type), ob = ORDRE.indexOf(b.type);
@@ -189,10 +213,12 @@
   function carte(r) {
     var meta = [r.auteur, fmtDate(r.date)].filter(Boolean).join(' · ');
     var badges = (r.type ? '<li><p class="fr-badge fr-badge--sm fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
-      (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--warning">' + esc(r.statut) + '</p></li>' : '');
+      (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--warning">' + esc(r.statut) + '</p></li>' : '') +
+      (r.niveau ? '<li><p class="fr-badge fr-badge--sm fr-badge--no-icon">' + esc(r.niveau) + '</p></li>' : '') +
+      (r.duree ? '<li><p class="fr-badge fr-badge--sm fr-badge--no-icon">' + esc(r.duree) + '</p></li>' : '');
     return '<div class="fr-col-12 fr-col-md-6 fr-col-lg-4"><div class="fr-card fr-enlarge-link"><div class="fr-card__body"><div class="fr-card__content">' +
       '<h3 class="fr-card__title"><a href="#r/' + esc(r.id) + '">' + esc(r.titre) + '</a></h3>' +
-      (r.description ? '<p class="fr-card__desc l17-clamp">' + esc(r.description) + '</p>' : '') +
+      ((r.resume || r.description) ? '<p class="fr-card__desc l17-clamp">' + esc(r.resume || r.description) + '</p>' : '') +
       '<div class="fr-card__start">' +
       (badges ? '<ul class="fr-badges-group">' + badges + '</ul>' : '') +
       (meta ? '<p class="fr-card__detail">' + esc(meta) + '</p>' : '') +
@@ -229,6 +255,13 @@
           return '<button type="button" class="fr-tag" data-tag="' + esc(t) + '" aria-pressed="' + (state.tags[t] ? 'true' : 'false') + '">' + esc(t) + '</button>';
         }).join('') + '</div>';
     }
+    FACETTES.forEach(function (f) {
+      var vals = valeursFacette(f[0]);
+      if (!vals.length) return;
+      h += '<div class="l17-facette" role="group" aria-label="' + esc(f[1]) + '"><span class="fr-text--sm l17-facette-label">' + esc(f[1]) + '</span>' +
+        '<button type="button" class="fr-tag" data-fac="' + f[0] + '" data-val="" aria-pressed="' + (!state.fac[f[0]]) + '">Tous</button>' +
+        vals.map(function (v) { return '<button type="button" class="fr-tag" data-fac="' + f[0] + '" data-val="' + esc(v) + '" aria-pressed="' + (state.fac[f[0]] === v) + '">' + esc(v) + '</button>'; }).join('') + '</div>';
+    });
     h += '</div><p class="fr-text--sm l17-count" id="l17-count">' + res.length + ' ressource' + (res.length > 1 ? 's' : '') + '</p>';
     if (res.length) h += '<div class="fr-grid-row fr-grid-row--gutters" id="l17-grid">' + res.map(carte).join('') + '</div>';
     else h += '<p id="l17-grid">Aucune ressource ne correspond à votre recherche.</p>';
@@ -242,6 +275,9 @@
     });
     Array.prototype.forEach.call(app.querySelectorAll('[data-section]'), function (b) {
       b.addEventListener('click', function () { state.type = b.getAttribute('data-section'); rendreListe(); });
+    });
+    Array.prototype.forEach.call(app.querySelectorAll('[data-fac]'), function (b) {
+      b.addEventListener('click', function () { state.fac[b.getAttribute('data-fac')] = b.getAttribute('data-val'); rendreListe(); });
     });
     Array.prototype.forEach.call(app.querySelectorAll('[data-tag]'), function (b) {
       b.addEventListener('click', function () {
@@ -266,6 +302,11 @@
   }
 
   // ---------- rendu : fiche ----------
+  function infos(r) {
+    var l = [['Niveau', r.niveau], ['Durée', r.duree], ['Groupe', r.participants], ['Quand', r.phase.join(', ')], ['Format', r.format]].filter(function (x) { return x[1]; });
+    if (!l.length) return '';
+    return '<dl class="l17-infos">' + l.map(function (x) { return '<div><dt>' + esc(x[0]) + '</dt><dd>' + esc(x[1]) + '</dd></div>'; }).join('') + '</dl>';
+  }
   function rendreFiche(id) {
     var r = state.rows.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) { location.hash = ''; return; }
@@ -276,6 +317,8 @@
       (r.statut === 'Prototype' ? '<div class="fr-alert fr-alert--warning fr-alert--sm fr-mb-2w"><p>Prototype : contenu en cours de relecture. À utiliser avec discernement.</p></div>' : '') +
       (r.images.length ? '<p><img class="fr-responsive-img l17-vignette-detail" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '"></p>' : '') +
       (meta ? '<p class="fr-text--sm l17-meta">' + esc(meta) + '</p>' : '') +
+      (r.resume ? '<p class="fr-text--lead">' + esc(r.resume) + '</p>' : '') +
+      infos(r) +
       (r.description ? '<p class="l17-pre">' + esc(r.description) + '</p>' : '') +
       (r.tags.length ? '<ul class="fr-tags-group">' + r.tags.map(function (t) { return '<li><p class="fr-tag">' + esc(t) + '</p></li>'; }).join('') + '</ul>' : '');
     if (r.fichiers.length || r.lien) {
