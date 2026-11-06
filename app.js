@@ -147,7 +147,8 @@
       if (img.getAttribute('data-ok')) return;
       img.setAttribute('data-ok', '1');
       if (state.demo) { img.closest('.fr-card__header, p') && img.closest('.fr-card__header, p').remove(); return; }
-      blobDe(img.getAttribute('data-att')).then(function (u) { img.src = u; }).catch(function () {
+      blobDe(img.getAttribute('data-att')).then(function (u) { img.src = u; }).catch(function (e) {
+        try { console.warn('[l17] vignette', e && e.message); document.title = 'vignette: ' + (e && e.message); } catch (x) {}
         var h = img.closest('.fr-card__header'); if (h) h.remove();
       });
     });
