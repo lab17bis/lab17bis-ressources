@@ -535,7 +535,7 @@
       : (r.type === 'Assistant' ? (carrousel(r.titre) || '<div class="l17-visuel-assistant" aria-hidden="true">' + iconeAssistant(r.titre) + '<span>Assistant interactif</span></div>') : '');
     if (fichePdf && visuel) visuel = '<div id="l17-visuel-fiche">' + visuel + '</div>';
     var h = '<div class="l17-hautfiche"><a class="fr-link" href="#" id="l17-back"><span aria-hidden="true">← </span>Retour au catalogue</a>' +
-      '<button type="button" class="fr-btn fr-btn--tertiary fr-btn--sm fr-icon-links-fill fr-btn--icon-left" id="l17-copier">Copier le lien de cette fiche</button></div>' +
+      '<button type="button" class="fr-btn fr-btn--tertiary fr-btn--sm" id="l17-copier">Copier le lien de cette fiche</button></div>' +
       '<p class="fr-text--sm l17-lien-manuel" id="l17-lien-manuel" hidden><label for="l17-lien-champ">Copiez ce lien :</label> <input class="fr-input" id="l17-lien-champ" readonly></p>' +
       '<p class="fr-sr-only" role="status" id="l17-statut-copie"></p>' +
       '<h1 class="fr-h2">' + esc(r.titre) + '</h1>' +
