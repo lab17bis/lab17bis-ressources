@@ -50,4 +50,11 @@ html, body { background: #fff; }
 .l17-usages{margin:1rem 0}
 .l17-apport{margin-top:1.5rem;color:#666}
 .l17-vignette-detail.l17-bg-gris{background:#f6f6f6}
-.fr-card__img .l17-vignette.l17-zoom{transform:scale(1.35);transform-origin:center 55%}
+.fr-card__img .l17-vignette.l17-zoom{transform:scale(1.5);transform-origin:center 55%}
+
+.l17-liste{margin:.25rem 0 1rem;padding-left:1.25rem}
+.l17-liste li{margin-bottom:.5rem}
+.l17-avant{margin:.25rem 0 .75rem}
+.l17-bloc-titre{margin-bottom:.5rem}
+.l17-apport-bloc{margin:1.5rem 0}
+.l17-astuce{margin-top:.5rem}

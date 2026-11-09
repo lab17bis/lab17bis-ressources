@@ -28,7 +28,12 @@
     { name: 'etapes', title: 'Étapes (une par ligne)', type: 'Text', optional: true },
     { name: 'vigilance', title: 'Point de vigilance', type: 'Text', optional: true },
     { name: 'usages', title: 'Aussi utile pour', type: 'Text', optional: true },
-    { name: 'apport', title: 'Ce que ça apporte (famille)', type: 'Text', optional: true },
+    { name: 'apport', title: 'Ce que ça apporte', type: 'Text', optional: true },
+    { name: 'situation', title: 'La situation (conseils)', type: 'Text', optional: true },
+    { name: 'principe', title: 'Le principe à suivre (conseils)', type: 'Text', optional: true },
+    { name: 'posture', title: 'La posture (conseils)', type: 'Text', optional: true },
+    { name: 'materiel', title: 'Matériel et conditions (une par ligne)', type: 'Text', optional: true },
+    { name: 'resultat', title: 'Ce que vous obtenez / à retenir', type: 'Text', optional: true },
     { name: 'cadrage', title: 'Cadrage de la vignette', type: 'Choice,Text', optional: true, description: 'Remplir / Remplir (haut) ; vide = image entière' },
     { name: 'statut', title: 'Statut', type: 'Choice,Text', optional: true, description: 'Ex. Prototype' }
   ];
@@ -89,7 +94,12 @@
       statut: r.statut ? String(r.statut) : '',
       cadrage: r.cadrage ? String(r.cadrage) : '',
       etapes: r.etapes ? String(r.etapes).split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean) : [],
-      vigilance: r.vigilance ? String(r.vigilance) : '',
+      vigilance: r.vigilance ? String(r.vigilance).split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean) : [],
+      situation: r.situation ? String(r.situation) : '',
+      principe: r.principe ? String(r.principe) : '',
+      posture: r.posture ? String(r.posture) : '',
+      materiel: r.materiel ? String(r.materiel).split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean) : [],
+      resultat: r.resultat ? String(r.resultat) : '',
       usages: r.usages ? String(r.usages) : '',
       apport: r.apport ? String(r.apport) : '',
       resume: r.resume || '',
@@ -253,7 +263,7 @@
     var meta = [r.participants, r.duree].filter(Boolean).join(' · ');
     var badges = (r.type ? '<li><p class="fr-badge fr-badge--sm fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
       (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') +
-      (r.niveau ? '<li><p class="fr-badge fr-badge--sm fr-badge--no-icon">' + esc(r.niveau) + '</p></li>' : '');
+      (r.tags.length === 1 ? '<li><p class="fr-badge fr-badge--sm fr-badge--green-menthe fr-badge--no-icon">' + esc(r.tags[0]) + '</p></li>' : '');
     return '<div class="fr-col-12 fr-col-md-6 fr-col-lg-4"><div class="fr-card fr-enlarge-link"><div class="fr-card__body"><div class="fr-card__content">' +
       '<h3 class="fr-card__title"><a href="#r/' + esc(r.id) + '">' + esc(r.titre) + '</a></h3>' +
       ((r.resume || r.description) ? '<p class="fr-card__desc l17-clamp">' + esc(r.resume || r.description) + '</p>' : '') +
@@ -288,6 +298,7 @@
           return '<button type="button" class="fr-btn ' + (state.type === t ? '' : 'fr-btn--tertiary') + ' fr-btn--sm" data-section="' + esc(t) + '" aria-pressed="' + (state.type === t) + '">' + esc(PLURIEL[t] || t) + ' (' + compteType(t) + ')</button>';
         }).join('') + '</div>';
     }
+    if (!state.type && types.length > 1) h += '<p class="fr-hint-text fr-mb-2w l17-astuce">Chaque section a ses propres filtres : choisissez Outils, Méthodes ou Conseils pour affiner par famille.</p>';
     h += '<div class="fr-grid-row fr-grid-row--gutters">' +
       '<div class="fr-col-12"><div class="fr-search-bar" role="search"><label class="fr-label" for="l17-q">Rechercher une ressource</label>' +
       '<input class="fr-input" type="search" id="l17-q" placeholder="Rechercher une ressource" value="' + esc(state.q) + '">' +
@@ -353,6 +364,24 @@
     if (!l.length) return '';
     return '<dl class="l17-infos">' + l.map(function (x) { return '<div><dt>' + esc(x[0]) + '</dt><dd>' + esc(x[1]) + '</dd></div>'; }).join('') + '</dl>';
   }
+  function bloc(titre, html) {
+    return html ? '<h2 class="fr-h5 fr-mt-3w l17-bloc-titre">' + esc(titre) + '</h2>' + html : '';
+  }
+  function liste(items, cls) {
+    return items && items.length ? '<ul class="' + cls + '">' + items.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '';
+  }
+  function etapesHtml(r) {
+    if (!r.etapes.length) return '';
+    if (r.type === 'Conseil') {
+      return bloc('Comment agir', '<ul class="l17-liste l17-agir">' + r.etapes.map(function (x) {
+        var i = x.indexOf(' : ');
+        return '<li>' + (i > 0 ? '<strong>' + esc(x.slice(0, i)) + '</strong> ' + esc(x.slice(i + 3)) : esc(x)) + '</li>';
+      }).join('') + '</ul>');
+    }
+    var prep = '', et = r.etapes;
+    if (/^Avant\s*:/.test(et[0])) { prep = '<p class="l17-avant"><strong>Avant de commencer :</strong> ' + esc(et[0].replace(/^Avant\s*:\s*/, '')) + '</p>'; et = et.slice(1); }
+    return bloc('Comment faire', prep + '<ol class="l17-etapes">' + et.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>');
+  }
   function rendreFiche(id) {
     var r = state.rows.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) { location.hash = ''; return; }
@@ -373,11 +402,17 @@
       (meta ? '<p class="fr-text--sm l17-meta">' + esc(meta) + '</p>' : '') +
       (r.resume ? '<p class="fr-text--lead l17-resume">' + esc(r.resume) + '</p>' : '') +
       infos(r) +
-      (r.description && r.description !== r.resume ? '<p class="l17-pre">' + esc(r.description) + '</p>' : '') +
-      (r.etapes.length ? '<h2 class="fr-h5 fr-mt-2w">Comment faire</h2><ol class="l17-etapes">' + r.etapes.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') +
-      (r.vigilance ? '<div class="fr-callout fr-callout--yellow-tournesol l17-vigilance"><h3 class="fr-callout__title">Point de vigilance</h3><p class="fr-callout__text">' + esc(r.vigilance) + '</p></div>' : '') +
+      (r.apport ? '<div class="fr-callout l17-apport-bloc"><h2 class="fr-callout__title fr-h6">Ce que ça apporte</h2><p class="fr-callout__text">' + esc(r.apport) + '</p></div>' : '') +
+      bloc('La situation', r.situation ? '<p>' + esc(r.situation) + '</p>' : '') +
+      bloc('Le principe à suivre', r.principe ? '<p>' + esc(r.principe) + '</p>' : '') +
+      bloc('Présentation', r.description && r.description !== r.resume ? '<p class="l17-pre">' + esc(r.description) + '</p>' : '') +
+      bloc('Matériel et conditions de réussite', liste(r.materiel, 'l17-liste')) +
+      etapesHtml(r) +
+      bloc('La posture', r.posture ? '<p>' + esc(r.posture) + '</p>' : '') +
+      (r.vigilance.length ? '<div class="fr-callout fr-callout--yellow-tournesol l17-vigilance"><h3 class="fr-callout__title">' + (r.vigilance.length > 1 ? 'Points de vigilance' : 'Point de vigilance') + '</h3>' +
+        (r.vigilance.length > 1 ? liste(r.vigilance, 'l17-liste') : '<p class="fr-callout__text">' + esc(r.vigilance[0]) + '</p>') + '</div>' : '') +
+      bloc(r.type === 'Conseil' ? 'À retenir' : 'Ce que vous obtenez', r.resultat ? '<p>' + esc(r.resultat) + '</p>' : '') +
       (r.usages ? '<p class="l17-usages"><strong>Aussi utile pour :</strong> ' + esc(r.usages) + '</p>' : '') +
-      (r.apport && famille ? '<p class="fr-text--sm l17-apport"><strong>Famille « ' + esc(famille) + ' » :</strong> ' + esc(r.apport) + '</p>' : '') +
       '</div></div>';
     if (r.fichiers.length || r.lien) {
       h += '<h2 class="fr-h5 fr-mt-3w">Télécharger et consulter</h2><ul class="l17-files" id="l17-files">';
