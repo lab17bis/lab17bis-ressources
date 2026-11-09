@@ -67,3 +67,4 @@ html, body { background: #fff; }
 .l17-car-nav{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;border-top:1px solid #ddd}
 .l17-fiche-pages{display:flex;flex-direction:column;gap:1rem;align-items:center}
 .l17-page-fiche{width:100%;max-width:820px;height:auto;border:1px solid #ddd;background:#fff}
+.l17-vue canvas{display:block;width:100%;height:auto}

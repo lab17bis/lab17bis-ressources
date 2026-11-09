@@ -72,7 +72,7 @@
   }
 
   // Ordre des sections ; « Livrable » et « Atelier clé en main » s'affichent dès qu'une ressource de ce type existe
-  var ORDRE = ['Outil', 'Méthode', 'Conseil', 'Assistant', 'Livrable', 'Atelier clé en main'];
+  var ORDRE = ['Outil', 'Méthode', 'Assistant', 'Conseil', 'Livrable', 'Atelier clé en main'];
   var PLURIEL = { 'Outil': 'Outils', 'Méthode': 'Méthodes', 'Conseil': 'Conseils', 'Assistant': 'Assistants', 'Livrable': 'Livrables', 'Atelier clé en main': 'Ateliers clés en main' };
   function absUrl(u) {
     if (!u) return null;
@@ -425,44 +425,62 @@
     return pdfjsPret;
   }
   function afficherFiche(r) {
-    var zone = document.getElementById('l17-fiche');
+    var zone = document.getElementById('l17-visuel-fiche');
     if (!zone) return;
-    var ids = r.fichiers.slice();
     var suite = Promise.resolve(null);
-    ids.forEach(function (id) {
+    r.fichiers.forEach(function (id) {
       suite = suite.then(function (trouve) {
         if (trouve) return trouve;
         return infoFichier(id).then(function (info) { return /\.pdf$/i.test(info.fileName || '') ? id : null; });
       });
     });
     suite.then(function (id) {
-      if (!id) { zone.remove(); return; }
+      if (!id) return;
       return Promise.all([chargerPdfjs(), blobDe(id)]).then(function (x) {
         return x[0].getDocument(x[1]).promise;
       }).then(function (pdf) {
-        var p = Promise.resolve();
+        var cvs = [], p = Promise.resolve();
         for (var n = 1; n <= pdf.numPages; n++) (function (n) {
           p = p.then(function () { return pdf.getPage(n); }).then(function (page) {
             var vp = page.getViewport({ scale: 2 });
             var cv = document.createElement('canvas');
-            cv.width = vp.width; cv.height = vp.height; cv.className = 'l17-page-fiche';
-            cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Fiche complète, page ' + n + ' sur ' + pdf.numPages);
-            zone.querySelector('.l17-fiche-pages').appendChild(cv);
+            cv.width = vp.width; cv.height = vp.height;
+            cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Fiche, ' + (n === 1 ? 'recto' : 'verso'));
+            cvs.push(cv);
             return page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
           });
         })(n);
-        return p;
-      }).then(function () { var t = zone.querySelector('.l17-fiche-attente'); if (t) t.remove(); });
-    }).catch(function (e) { try { console.warn('[l17] fiche', e && e.message); } catch (x) {} zone.remove(); });
+        return p.then(function () { return cvs; });
+      }).then(function (cvs) {
+        var noms = ['Recto', 'Verso'];
+        var c = document.createElement('div');
+        c.className = 'l17-carrousel'; c.setAttribute('role', 'group'); c.setAttribute('aria-roledescription', 'carrousel'); c.setAttribute('aria-label', 'Fiche recto et verso'); c.setAttribute('data-n', cvs.length);
+        cvs.forEach(function (cv, i) {
+          var f = document.createElement('figure'); f.className = 'l17-vue'; f.setAttribute('data-i', i); if (i) f.hidden = true;
+          f.appendChild(cv);
+          var cap = document.createElement('figcaption'); cap.className = 'fr-text--xs'; cap.textContent = noms[i] || ('Page ' + (i + 1)); f.appendChild(cap);
+          c.appendChild(f);
+        });
+        if (cvs.length > 1) {
+          var nav = document.createElement('div'); nav.className = 'l17-car-nav';
+          nav.innerHTML = '<button type="button" class="fr-btn fr-btn--tertiary fr-btn--sm" data-dir="-1">‹ Précédent</button><span class="fr-text--sm l17-car-pos">1 / ' + cvs.length + '</span><button type="button" class="fr-btn fr-btn--tertiary fr-btn--sm" data-dir="1">Suivant ›</button>';
+          c.appendChild(nav);
+        }
+        zone.innerHTML = ''; zone.appendChild(c);
+        brancherCarrousel();
+      });
+    }).catch(function (e) { try { console.warn('[l17] fiche', e && e.message); } catch (x) {} });
   }
   function rendreFiche(id) {
     var r = state.rows.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) { location.hash = ''; return; }
     var meta = [r.auteur && r.auteur !== 'Lab 17 bis' ? r.auteur : '', r.auteur && r.auteur !== 'Lab 17 bis' ? fmtDate(r.date) : ''].filter(Boolean).join(' · ');
     var famille = r.tags.length === 1 ? r.tags[0] : '';
+    var fichePdf = (r.type === 'Méthode' || r.type === 'Outil') && r.fichiers.length;
     var visuel = r.images.length
       ? '<img class="fr-responsive-img l17-vignette-detail' + (r.type === 'Conseil' ? ' l17-bg-gris' : '') + '" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '">'
       : (r.type === 'Assistant' ? (carrousel(r.titre) || '<div class="l17-visuel-assistant" aria-hidden="true">' + iconeAssistant(r.titre) + '<span>Assistant interactif</span></div>') : '');
+    if (fichePdf && visuel) visuel = '<div id="l17-visuel-fiche">' + visuel + '</div>';
     var h = '<p><a class="fr-link" href="#" id="l17-back"><span aria-hidden="true">← </span>Retour au catalogue</a></p>' +
       '<h1 class="fr-h2">' + esc(r.titre) + '</h1>' +
       '<ul class="fr-badges-group">' + (r.type ? '<li><p class="fr-badge fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
@@ -487,7 +505,6 @@
       bloc(r.type === 'Conseil' ? 'À retenir' : 'Ce que vous obtenez', r.resultat ? '<p>' + esc(r.resultat) + '</p>' : '') +
       (r.usages ? '<p class="l17-usages"><strong>Aussi utile pour :</strong> ' + esc(r.usages) + '</p>' : '') +
       '</div></div>';
-    if ((r.type === 'Méthode' || r.type === 'Outil') && r.fichiers.length) h += '<div id="l17-fiche"><h2 class="fr-h5 fr-mt-3w">La fiche complète</h2><p class="fr-text--sm l17-fiche-attente">Chargement de la fiche…</p><div class="l17-fiche-pages"></div></div>';
     if (r.fichiers.length || r.lien) {
       h += '<h2 class="fr-h5 fr-mt-3w">Télécharger et consulter</h2><ul class="l17-files" id="l17-files">';
       r.fichiers.forEach(function (f) {
