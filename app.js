@@ -263,7 +263,7 @@
     var meta = [r.participants, r.duree].filter(Boolean).join(' · ');
     var badges = (r.type ? '<li><p class="fr-badge fr-badge--sm fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
       (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') +
-      (r.tags.length === 1 ? '<li><p class="fr-badge fr-badge--sm fr-badge--green-menthe fr-badge--no-icon">' + esc(r.tags[0]) + '</p></li>' : '');
+      (r.tags.length === 1 ? '<li><p class="fr-badge fr-badge--sm l17-badge-famille fr-badge--no-icon">' + esc(r.tags[0]) + '</p></li>' : '');
     return '<div class="fr-col-12 fr-col-md-6 fr-col-lg-4"><div class="fr-card fr-enlarge-link"><div class="fr-card__body"><div class="fr-card__content">' +
       '<h3 class="fr-card__title"><a href="#r/' + esc(r.id) + '">' + esc(r.titre) + '</a></h3>' +
       ((r.resume || r.description) ? '<p class="fr-card__desc l17-clamp">' + esc(r.resume || r.description) + '</p>' : '') +
@@ -382,6 +382,34 @@
     if (/^Avant\s*:/.test(et[0])) { prep = '<p class="l17-avant"><strong>Avant de commencer :</strong> ' + esc(et[0].replace(/^Avant\s*:\s*/, '')) + '</p>'; et = et.slice(1); }
     return bloc(r.type === 'Assistant' ? 'Le parcours' : 'Comment faire', prep + '<ol class="l17-etapes">' + et.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>');
   }
+  var VUES = { 'problematisation': ['problematisation', 2], 'indicateurs': ['indicateurs-pilotage', 2], 'irritants': ['reperage-des-irritants', 2], 'formalisation': ['formalisation-processus-et-procedures', 2], 'immersion': ['immersion', 2], 'cadrage': ['cadrage-reunion', 2], 'accompagnement': ['accompagnement-au-changement', 2], 'clarification': ['clarification-un-ecrit', 2], 'conception': ['conception', 1] };
+  function vuesAssistant(titre) {
+    var t = String(titre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    for (var k in VUES) if (t.indexOf(k) >= 0) {
+      var out = []; for (var i = 1; i <= VUES[k][1]; i++) out.push('assets/assistants/' + VUES[k][0] + '-' + i + '.jpg');
+      return out;
+    }
+    return [];
+  }
+  function carrousel(titre) {
+    var v = vuesAssistant(titre);
+    if (!v.length) return '';
+    var libelles = ['Écran d’accueil', 'Première étape'];
+    return '<div class="l17-carrousel" role="group" aria-roledescription="carrousel" aria-label="Aperçu de l’assistant" data-n="' + v.length + '">' +
+      v.map(function (u, i) { return '<figure class="l17-vue" data-i="' + i + '"' + (i ? ' hidden' : '') + '><img class="fr-responsive-img" src="' + esc(u) + '" alt="Aperçu de l’assistant : ' + libelles[i] + '"><figcaption class="fr-text--xs">' + libelles[i] + '</figcaption></figure>'; }).join('') +
+      (v.length > 1 ? '<div class="l17-car-nav"><button type="button" class="fr-btn fr-btn--tertiary fr-btn--sm" data-dir="-1" title="Vue précédente">‹ Précédent</button><span class="fr-text--sm l17-car-pos">1 / ' + v.length + '</span><button type="button" class="fr-btn fr-btn--tertiary fr-btn--sm" data-dir="1" title="Vue suivante">Suivant ›</button></div>' : '') + '</div>';
+  }
+  function brancherCarrousel() {
+    var c = app.querySelector('.l17-carrousel'); if (!c) return;
+    var n = +c.getAttribute('data-n'), cur = 0;
+    Array.prototype.forEach.call(c.querySelectorAll('[data-dir]'), function (b) {
+      b.addEventListener('click', function () {
+        cur = (cur + (+b.getAttribute('data-dir')) + n) % n;
+        Array.prototype.forEach.call(c.querySelectorAll('.l17-vue'), function (f) { f.hidden = (+f.getAttribute('data-i') !== cur); });
+        c.querySelector('.l17-car-pos').textContent = (cur + 1) + ' / ' + n;
+      });
+    });
+  }
   function rendreFiche(id) {
     var r = state.rows.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) { location.hash = ''; return; }
@@ -389,11 +417,11 @@
     var famille = r.tags.length === 1 ? r.tags[0] : '';
     var visuel = r.images.length
       ? '<img class="fr-responsive-img l17-vignette-detail' + (r.type === 'Conseil' ? ' l17-bg-gris' : '') + '" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '">'
-      : (r.type === 'Assistant' ? '<div class="l17-visuel-assistant" aria-hidden="true">' + iconeAssistant(r.titre) + '<span>Assistant interactif</span></div>' : '');
+      : (r.type === 'Assistant' ? (carrousel(r.titre) || '<div class="l17-visuel-assistant" aria-hidden="true">' + iconeAssistant(r.titre) + '<span>Assistant interactif</span></div>') : '');
     var h = '<p><a class="fr-link" href="#" id="l17-back"><span aria-hidden="true">← </span>Retour au catalogue</a></p>' +
       '<h1 class="fr-h2">' + esc(r.titre) + '</h1>' +
       '<ul class="fr-badges-group">' + (r.type ? '<li><p class="fr-badge fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
-        (famille ? '<li><p class="fr-badge fr-badge--green-menthe fr-badge--no-icon">' + esc(famille) + '</p></li>' : '') +
+        (famille ? '<li><p class="fr-badge l17-badge-famille fr-badge--no-icon">' + esc(famille) + '</p></li>' : '') +
         (r.statut ? '<li><p class="fr-badge fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') + '</ul>' +
       (r.statut === 'Prototype' ? '<div class="fr-alert fr-alert--info fr-alert--sm fr-mb-2w"><p>Prototype : contenu en cours de relecture. À utiliser avec discernement.</p></div>' : '') +
       '<div class="fr-grid-row fr-grid-row--gutters">' +
@@ -432,6 +460,7 @@
         b.addEventListener('click', function () { telecharger(fid, nom); });
       });
     });
+    brancherCarrousel();
     chargerImages();
     window.scrollTo(0, 0);
   }

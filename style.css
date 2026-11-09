@@ -58,3 +58,10 @@ html, body { background: #fff; }
 .l17-bloc-titre{margin-bottom:.5rem}
 .l17-apport-bloc{margin:1.5rem 0}
 .l17-astuce{margin-top:.5rem}
+
+.l17-badge-famille{background:#C7AAE9;color:#1D1D1B}
+.l17-carrousel{border:1px solid #ddd;background:#fff}
+.l17-vue{margin:0}
+.l17-vue img{display:block;width:100%;height:auto}
+.l17-vue figcaption{padding:.25rem .75rem;color:#666}
+.l17-car-nav{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;border-top:1px solid #ddd}
