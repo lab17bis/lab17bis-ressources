@@ -487,7 +487,7 @@
       bloc(r.type === 'Conseil' ? 'À retenir' : 'Ce que vous obtenez', r.resultat ? '<p>' + esc(r.resultat) + '</p>' : '') +
       (r.usages ? '<p class="l17-usages"><strong>Aussi utile pour :</strong> ' + esc(r.usages) + '</p>' : '') +
       '</div></div>';
-    if (r.type === 'Méthode' && r.fichiers.length) h += '<div id="l17-fiche"><h2 class="fr-h5 fr-mt-3w">La fiche complète</h2><p class="fr-text--sm l17-fiche-attente">Chargement de la fiche…</p><div class="l17-fiche-pages"></div></div>';
+    if ((r.type === 'Méthode' || r.type === 'Outil') && r.fichiers.length) h += '<div id="l17-fiche"><h2 class="fr-h5 fr-mt-3w">La fiche complète</h2><p class="fr-text--sm l17-fiche-attente">Chargement de la fiche…</p><div class="l17-fiche-pages"></div></div>';
     if (r.fichiers.length || r.lien) {
       h += '<h2 class="fr-h5 fr-mt-3w">Télécharger et consulter</h2><ul class="l17-files" id="l17-files">';
       r.fichiers.forEach(function (f) {
@@ -507,7 +507,7 @@
       });
     });
     brancherCarrousel();
-    if (r.type === 'Méthode') afficherFiche(r);
+    if (r.type === 'Méthode' || r.type === 'Outil') afficherFiche(r);
     chargerImages();
     window.scrollTo(0, 0);
   }
