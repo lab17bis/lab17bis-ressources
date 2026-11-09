@@ -271,7 +271,7 @@
       (badges ? '<ul class="fr-badges-group">' + badges + '</ul>' : '') +
       (meta ? '<p class="fr-card__detail">' + esc(meta) + '</p>' : '') +
       '</div></div></div>' +
-      (!r.images.length && r.type === 'Assistant' && vuesAssistant(r.titre).length ? '<div class="fr-card__header"><div class="fr-card__img"><img class="fr-responsive-img l17-vignette l17-cover-top" src="' + esc(vuesAssistant(r.titre)[0]) + '" alt=""></div></div>' : '') +
+      (!r.images.length && r.type === 'Assistant' && vuesAssistant(r.titre).length ? '<div class="fr-card__header"><div class="fr-card__img"><img class="fr-responsive-img l17-vignette" src="' + esc(vuesAssistant(r.titre)[0]) + '" alt=""></div></div>' : '') +
       (!r.images.length && r.type === 'Assistant' && !vuesAssistant(r.titre).length ? '<div class="fr-card__header"><div class="fr-card__img"><div class="l17-visuel-assistant" aria-hidden="true">' + iconeAssistant(r.titre) + '<span>Assistant interactif</span></div></div></div>' : '') +
       (r.images.length ? '<div class="fr-card__header"><div class="fr-card__img"><img class="fr-responsive-img l17-vignette' + vignetteClasses(r) + '" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '"></div></div>' : '') +
       '</div></div>';
