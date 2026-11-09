@@ -405,7 +405,7 @@
       (r.apport ? '<div class="fr-callout l17-apport-bloc"><h2 class="fr-callout__title fr-h6">Ce que ça apporte</h2><p class="fr-callout__text">' + esc(r.apport) + '</p></div>' : '') +
       bloc('La situation', r.situation ? '<p>' + esc(r.situation) + '</p>' : '') +
       bloc('Le principe à suivre', r.principe ? '<p>' + esc(r.principe) + '</p>' : '') +
-      bloc('Présentation', r.description && r.description !== r.resume ? '<p class="l17-pre">' + esc(r.description) + '</p>' : '') +
+      bloc('Présentation', !r.situation && r.description && r.description !== r.resume ? '<p class="l17-pre">' + esc(r.description) + '</p>' : '') +
       bloc('Matériel et conditions de réussite', liste(r.materiel, 'l17-liste')) +
       etapesHtml(r) +
       bloc('La posture', r.posture ? '<p>' + esc(r.posture) + '</p>' : '') +
