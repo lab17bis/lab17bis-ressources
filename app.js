@@ -25,13 +25,17 @@
     { name: 'participants', title: 'Taille du groupe', type: 'Choice,Text', optional: true, description: 'Ex. 5 à 12 personnes' },
     { name: 'phase', title: 'Quand l’utiliser', type: 'ChoiceList,Text', optional: true, description: 'Phase du projet' },
     { name: 'format', title: 'Format', type: 'Choice,Text', optional: true, description: 'Présentiel / Distanciel / Les deux' },
+    { name: 'etapes', title: 'Étapes (une par ligne)', type: 'Text', optional: true },
+    { name: 'vigilance', title: 'Point de vigilance', type: 'Text', optional: true },
+    { name: 'usages', title: 'Aussi utile pour', type: 'Text', optional: true },
+    { name: 'apport', title: 'Ce que ça apporte (famille)', type: 'Text', optional: true },
     { name: 'cadrage', title: 'Cadrage de la vignette', type: 'Choice,Text', optional: true, description: 'Remplir / Remplir (haut) ; vide = image entière' },
     { name: 'statut', title: 'Statut', type: 'Choice,Text', optional: true, description: 'Ex. Prototype' }
   ];
 
   var app = document.getElementById('app');
   var state = { rows: [], q: '', type: '', tags: {}, fac: {}, mapped: false, demo: false };
-  var FACETTES = [['niveau', 'Niveau'], ['duree', 'Durée'], ['participants', 'Groupe'], ['phase', 'Étape'], ['format', 'Format']];
+  var FACETTES = [];
   var tokenCache = null;
 
   // ---------- utilitaires ----------
@@ -84,6 +88,10 @@
       images: toList(r.image),
       statut: r.statut ? String(r.statut) : '',
       cadrage: r.cadrage ? String(r.cadrage) : '',
+      etapes: r.etapes ? String(r.etapes).split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean) : [],
+      vigilance: r.vigilance ? String(r.vigilance) : '',
+      usages: r.usages ? String(r.usages) : '',
+      apport: r.apport ? String(r.apport) : '',
       resume: r.resume || '',
       niveau: r.niveau ? String(r.niveau) : '',
       duree: r.duree ? String(r.duree) : '',
@@ -212,21 +220,40 @@
       return db - da || (oa < 0 ? 99 : oa) - (ob < 0 ? 99 : ob) || a.titre.localeCompare(b.titre, 'fr');
     });
   }
-  var ASSISTANT_SVG = '<svg viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="#000091" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="14" width="44" height="30" rx="6"/><path d="M22 44l-6 10 14-10"/><circle cx="24" cy="29" r="2.5" fill="#000091"/><circle cx="40" cy="29" r="2.5" fill="#000091"/><path d="M26 36c3 2.5 9 2.5 12 0"/><path d="M32 14V8"/><circle cx="32" cy="6" r="2"/></svg>';
+  var SVG_O = '<svg viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="#000091" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">';
+  var ICONES = {
+    defaut: '<rect x="10" y="14" width="44" height="30" rx="6"/><path d="M22 44l-6 10 14-10"/><circle cx="24" cy="29" r="2.5" fill="#000091"/><circle cx="40" cy="29" r="2.5" fill="#000091"/><path d="M26 36c3 2.5 9 2.5 12 0"/>',
+    indicateurs: '<path d="M10 54h44"/><rect x="14" y="34" width="8" height="20"/><rect x="28" y="22" width="8" height="32"/><rect x="42" y="10" width="8" height="44"/>',
+    problem: '<circle cx="32" cy="32" r="22"/><path d="M25 26c0-5 4-8 8-8s8 3 8 7c0 6-9 6-9 13"/><circle cx="32" cy="46" r="1.5" fill="#000091"/>',
+    irritant: '<circle cx="28" cy="28" r="16"/><path d="M40 40l14 14"/><path d="M22 28h12M28 22v12"/>',
+    processus: '<rect x="6" y="24" width="14" height="16" rx="2"/><rect x="25" y="24" width="14" height="16" rx="2"/><rect x="44" y="24" width="14" height="16" rx="2"/><path d="M20 32h5M39 32h5"/>',
+    immersion: '<path d="M4 32C12 18 22 12 32 12s20 6 28 20c-8 14-18 20-28 20S12 46 4 32z"/><circle cx="32" cy="32" r="9"/>',
+    reunion: '<rect x="8" y="14" width="48" height="42" rx="4"/><path d="M8 26h48M20 8v12M44 8v12"/><path d="M20 38h10M20 46h18"/>',
+    changement: '<path d="M8 48c10 0 8-16 20-16s8-16 20-16"/><path d="M42 10l6 6-6 6"/><circle cx="8" cy="48" r="3" fill="#000091"/>',
+    ecrit: '<path d="M16 8h24l10 10v38H16z"/><path d="M40 8v10h10M24 28h18M24 36h18M24 44h12"/>',
+    conception: '<path d="M10 54l4-14L44 10l10 10L24 50z"/><path d="M38 16l10 10"/>'
+  };
+  function iconeAssistant(titre) {
+    var t = norm(titre || '');
+    var k = /indicateur|pilotage/.test(t) ? 'indicateurs' : /problemati/.test(t) ? 'problem' : /irritant|repera/.test(t) ? 'irritant' :
+      /processus|procedure|formalis/.test(t) ? 'processus' : /immersion/.test(t) ? 'immersion' : /reunion|cadrage/.test(t) ? 'reunion' :
+      /changement|accompagnement/.test(t) ? 'changement' : /ecrit|clarif/.test(t) ? 'ecrit' : /conception/.test(t) ? 'conception' : 'defaut';
+    return SVG_O + ICONES[k] + '</svg>';
+  }
   function vignetteClasses(r) {
     var c = '';
     if (r.type === 'Conseil') c += ' l17-bg-gris';
     if (r.type === 'Méthode') c += ' l17-marge';
     if (r.cadrage === 'Remplir') c += ' l17-cover';
     else if (r.cadrage === 'Remplir (haut)') c += ' l17-cover-top';
+    else if (r.cadrage === 'Zoom') c += ' l17-zoom';
     return c;
   }
   function carte(r) {
-    var meta = [r.auteur, fmtDate(r.date)].filter(Boolean).join(' · ');
+    var meta = [r.participants, r.duree].filter(Boolean).join(' · ');
     var badges = (r.type ? '<li><p class="fr-badge fr-badge--sm fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
       (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') +
-      (r.niveau ? '<li><p class="fr-badge fr-badge--sm fr-badge--no-icon">' + esc(r.niveau) + '</p></li>' : '') +
-      (r.duree ? '<li><p class="fr-badge fr-badge--sm fr-badge--no-icon">' + esc(r.duree) + '</p></li>' : '');
+      (r.niveau ? '<li><p class="fr-badge fr-badge--sm fr-badge--no-icon">' + esc(r.niveau) + '</p></li>' : '');
     return '<div class="fr-col-12 fr-col-md-6 fr-col-lg-4"><div class="fr-card fr-enlarge-link"><div class="fr-card__body"><div class="fr-card__content">' +
       '<h3 class="fr-card__title"><a href="#r/' + esc(r.id) + '">' + esc(r.titre) + '</a></h3>' +
       ((r.resume || r.description) ? '<p class="fr-card__desc l17-clamp">' + esc(r.resume || r.description) + '</p>' : '') +
@@ -234,7 +261,7 @@
       (badges ? '<ul class="fr-badges-group">' + badges + '</ul>' : '') +
       (meta ? '<p class="fr-card__detail">' + esc(meta) + '</p>' : '') +
       '</div></div></div>' +
-      (!r.images.length && r.type === 'Assistant' ? '<div class="fr-card__header"><div class="fr-card__img"><div class="l17-visuel-assistant" aria-hidden="true">' + ASSISTANT_SVG + '<span>Assistant interactif</span></div></div></div>' : '') +
+      (!r.images.length && r.type === 'Assistant' ? '<div class="fr-card__header"><div class="fr-card__img"><div class="l17-visuel-assistant" aria-hidden="true">' + iconeAssistant(r.titre) + '<span>Assistant interactif</span></div></div></div>' : '') +
       (r.images.length ? '<div class="fr-card__header"><div class="fr-card__img"><img class="fr-responsive-img l17-vignette' + vignetteClasses(r) + '" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '"></div></div>' : '') +
       '</div></div>';
   }
@@ -275,8 +302,8 @@
         vals.map(function (v) { return '<button type="button" class="fr-tag" data-fac="' + f[0] + '" data-val="' + esc(v) + '" aria-pressed="' + (state.fac[f[0]] === v) + '">' + esc(v) + '</button>'; }).join('') + '</div>';
     });
     h += HFAC;
-    if (tags.length) {
-      h += '<div class="l17-tags" role="group" aria-label="Filtrer par sujet précis">' +
+    if (state.type && tags.length > 1) {
+      h += '<div class="l17-tags" role="group" aria-label="Filtrer par famille">' +
         tags.map(function (t) {
           return '<button type="button" class="fr-tag" data-tag="' + esc(t) + '" aria-pressed="' + (state.tags[t] ? 'true' : 'false') + '">' + esc(t) + '</button>';
         }).join('') + '</div>';
@@ -322,24 +349,36 @@
 
   // ---------- rendu : fiche ----------
   function infos(r) {
-    var l = [['Niveau', r.niveau], ['Durée', r.duree], ['Groupe', r.participants], ['Quand', r.phase.join(', ')], ['Format', r.format]].filter(function (x) { return x[1]; });
+    var l = [['Participants', r.participants], ['Durée', r.duree], ['Difficulté', r.niveau]].filter(function (x) { return x[1]; });
     if (!l.length) return '';
     return '<dl class="l17-infos">' + l.map(function (x) { return '<div><dt>' + esc(x[0]) + '</dt><dd>' + esc(x[1]) + '</dd></div>'; }).join('') + '</dl>';
   }
   function rendreFiche(id) {
     var r = state.rows.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) { location.hash = ''; return; }
-    var meta = [r.auteur, fmtDate(r.date)].filter(Boolean).join(' · ');
+    var meta = [r.auteur && r.auteur !== 'Lab 17 bis' ? r.auteur : '', r.auteur && r.auteur !== 'Lab 17 bis' ? fmtDate(r.date) : ''].filter(Boolean).join(' · ');
+    var famille = r.tags.length === 1 ? r.tags[0] : '';
+    var visuel = r.images.length
+      ? '<img class="fr-responsive-img l17-vignette-detail' + (r.type === 'Conseil' ? ' l17-bg-gris' : '') + '" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '">'
+      : (r.type === 'Assistant' ? '<div class="l17-visuel-assistant" aria-hidden="true">' + iconeAssistant(r.titre) + '<span>Assistant interactif</span></div>' : '');
     var h = '<p><a class="fr-link" href="#" id="l17-back"><span aria-hidden="true">← </span>Retour au catalogue</a></p>' +
       '<h1 class="fr-h2">' + esc(r.titre) + '</h1>' +
-      ((r.type || r.statut) ? '<ul class="fr-badges-group">' + (r.type ? '<li><p class="fr-badge fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') + (r.statut ? '<li><p class="fr-badge fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') + '</ul>' : '') +
+      '<ul class="fr-badges-group">' + (r.type ? '<li><p class="fr-badge fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
+        (famille ? '<li><p class="fr-badge fr-badge--green-menthe fr-badge--no-icon">' + esc(famille) + '</p></li>' : '') +
+        (r.statut ? '<li><p class="fr-badge fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') + '</ul>' +
       (r.statut === 'Prototype' ? '<div class="fr-alert fr-alert--info fr-alert--sm fr-mb-2w"><p>Prototype : contenu en cours de relecture. À utiliser avec discernement.</p></div>' : '') +
-      (r.images.length ? '<p><img class="fr-responsive-img l17-vignette-detail" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '"></p>' : '') +
+      '<div class="fr-grid-row fr-grid-row--gutters">' +
+      (visuel ? '<div class="fr-col-12 fr-col-lg-5">' + visuel + '</div>' : '') +
+      '<div class="fr-col-12 ' + (visuel ? 'fr-col-lg-7' : '') + '">' +
       (meta ? '<p class="fr-text--sm l17-meta">' + esc(meta) + '</p>' : '') +
-      (r.resume ? '<p class="fr-text--lead">' + esc(r.resume) + '</p>' : '') +
+      (r.resume ? '<p class="fr-text--lead l17-resume">' + esc(r.resume) + '</p>' : '') +
       infos(r) +
-      (r.description ? '<p class="l17-pre">' + esc(r.description) + '</p>' : '') +
-      (r.tags.length ? '<ul class="fr-tags-group">' + r.tags.map(function (t) { return '<li><p class="fr-tag">' + esc(t) + '</p></li>'; }).join('') + '</ul>' : '');
+      (r.description && r.description !== r.resume ? '<p class="l17-pre">' + esc(r.description) + '</p>' : '') +
+      (r.etapes.length ? '<h2 class="fr-h5 fr-mt-2w">Comment faire</h2><ol class="l17-etapes">' + r.etapes.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') +
+      (r.vigilance ? '<div class="fr-callout fr-callout--yellow-tournesol l17-vigilance"><h3 class="fr-callout__title">Point de vigilance</h3><p class="fr-callout__text">' + esc(r.vigilance) + '</p></div>' : '') +
+      (r.usages ? '<p class="l17-usages"><strong>Aussi utile pour :</strong> ' + esc(r.usages) + '</p>' : '') +
+      (r.apport && famille ? '<p class="fr-text--sm l17-apport"><strong>Famille « ' + esc(famille) + ' » :</strong> ' + esc(r.apport) + '</p>' : '') +
+      '</div></div>';
     if (r.fichiers.length || r.lien) {
       h += '<h2 class="fr-h5 fr-mt-3w">Télécharger et consulter</h2><ul class="l17-files" id="l17-files">';
       r.fichiers.forEach(function (f) {
