@@ -375,7 +375,7 @@
     if (r.type === 'Conseil') {
       return bloc('Comment agir', '<ul class="l17-liste l17-agir">' + r.etapes.map(function (x) {
         var i = x.indexOf(' : ');
-        return '<li>' + (i > 0 ? '<strong>' + esc(x.slice(0, i)) + '</strong> ' + esc(x.slice(i + 3)) : esc(x)) + '</li>';
+        return '<li>' + (i > 0 ? '<strong>' + esc(x.slice(0, i)) + '</strong><br>' + esc(x.slice(i + 3)) : esc(x)) + '</li>';
       }).join('') + '</ul>');
     }
     var prep = '', et = r.etapes;
