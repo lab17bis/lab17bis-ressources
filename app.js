@@ -634,7 +634,9 @@
     majContribuer(courant ? courant.titre : '');
     versParent({ l17: 'route', hash: courant ? '#r/' + encodeURIComponent(courant.id) : '' });
     if (mode !== dernierMode) {
+      var premier = !dernierMode;
       dernierMode = mode;
+      if (premier) return;
       var t = app.querySelector('h1'); if (t) { t.setAttribute('tabindex', '-1'); try { t.focus({ preventScroll: true }); } catch (e) {} }
     }
   }
