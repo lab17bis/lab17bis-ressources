@@ -261,9 +261,9 @@
   }
   function carte(r) {
     var meta = [r.participants, r.duree].filter(Boolean).join(' · ');
-    var badges = (r.type ? '<li><p class="fr-badge fr-badge--sm fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
-      (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') +
-      (r.tags.length === 1 ? '<li><p class="fr-badge fr-badge--sm l17-badge-famille fr-badge--no-icon">' + esc(r.tags[0]) + '</p></li>' : '');
+    var badges = (r.type ? '<li><p class="fr-badge fr-badge--sm l17-badge-type fr-badge--no-icon">' + esc(r.type) + '</p></li>' : '') +
+      (r.tags.length === 1 ? '<li><p class="fr-badge fr-badge--sm l17-badge-famille fr-badge--no-icon">' + esc(r.tags[0]) + '</p></li>' : '') +
+      (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '');
     return '<div class="fr-col-12 fr-col-md-6 fr-col-lg-4"><div class="fr-card fr-enlarge-link"><div class="fr-card__body"><div class="fr-card__content">' +
       '<h3 class="fr-card__title"><a href="#r/' + esc(r.id) + '">' + esc(r.titre) + '</a></h3>' +
       ((r.resume || r.description) ? '<p class="fr-card__desc l17-clamp">' + esc(r.resume || r.description) + '</p>' : '') +
@@ -271,7 +271,8 @@
       (badges ? '<ul class="fr-badges-group">' + badges + '</ul>' : '') +
       (meta ? '<p class="fr-card__detail">' + esc(meta) + '</p>' : '') +
       '</div></div></div>' +
-      (!r.images.length && r.type === 'Assistant' ? '<div class="fr-card__header"><div class="fr-card__img"><div class="l17-visuel-assistant" aria-hidden="true">' + iconeAssistant(r.titre) + '<span>Assistant interactif</span></div></div></div>' : '') +
+      (!r.images.length && r.type === 'Assistant' && vuesAssistant(r.titre).length ? '<div class="fr-card__header"><div class="fr-card__img"><img class="fr-responsive-img l17-vignette l17-cover-top" src="' + esc(vuesAssistant(r.titre)[0]) + '" alt=""></div></div>' : '') +
+      (!r.images.length && r.type === 'Assistant' && !vuesAssistant(r.titre).length ? '<div class="fr-card__header"><div class="fr-card__img"><div class="l17-visuel-assistant" aria-hidden="true">' + iconeAssistant(r.titre) + '<span>Assistant interactif</span></div></div></div>' : '') +
       (r.images.length ? '<div class="fr-card__header"><div class="fr-card__img"><img class="fr-responsive-img l17-vignette' + vignetteClasses(r) + '" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '"></div></div>' : '') +
       '</div></div>';
   }
@@ -483,7 +484,7 @@
     if (fichePdf && visuel) visuel = '<div id="l17-visuel-fiche">' + visuel + '</div>';
     var h = '<p><a class="fr-link" href="#" id="l17-back"><span aria-hidden="true">← </span>Retour au catalogue</a></p>' +
       '<h1 class="fr-h2">' + esc(r.titre) + '</h1>' +
-      '<ul class="fr-badges-group">' + (r.type ? '<li><p class="fr-badge fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
+      '<ul class="fr-badges-group">' + (r.type ? '<li><p class="fr-badge l17-badge-type fr-badge--no-icon">' + esc(r.type) + '</p></li>' : '') +
         (famille ? '<li><p class="fr-badge l17-badge-famille fr-badge--no-icon">' + esc(famille) + '</p></li>' : '') +
         (r.statut ? '<li><p class="fr-badge fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') + '</ul>' +
       (r.statut === 'Prototype' ? '<div class="fr-alert fr-alert--info fr-alert--sm fr-mb-2w"><p>Prototype : contenu en cours de relecture. À utiliser avec discernement.</p></div>' : '') +
