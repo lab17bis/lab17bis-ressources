@@ -31,7 +31,7 @@
 
   var app = document.getElementById('app');
   var state = { rows: [], q: '', type: '', tags: {}, fac: {}, mapped: false, demo: false };
-  var FACETTES = [['niveau', 'Niveau'], ['duree', 'Durée'], ['participants', 'Groupe'], ['phase', 'Quand'], ['format', 'Format']];
+  var FACETTES = [['niveau', 'Niveau'], ['duree', 'Durée'], ['participants', 'Groupe'], ['phase', 'Étape'], ['format', 'Format']];
   var tokenCache = null;
 
   // ---------- utilitaires ----------
@@ -212,9 +212,11 @@
       return db - da || (oa < 0 ? 99 : oa) - (ob < 0 ? 99 : ob) || a.titre.localeCompare(b.titre, 'fr');
     });
   }
+  var ASSISTANT_SVG = '<svg viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="#000091" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="14" width="44" height="30" rx="6"/><path d="M22 44l-6 10 14-10"/><circle cx="24" cy="29" r="2.5" fill="#000091"/><circle cx="40" cy="29" r="2.5" fill="#000091"/><path d="M26 36c3 2.5 9 2.5 12 0"/><path d="M32 14V8"/><circle cx="32" cy="6" r="2"/></svg>';
   function vignetteClasses(r) {
     var c = '';
     if (r.type === 'Conseil') c += ' l17-bg-gris';
+    if (r.type === 'Méthode') c += ' l17-marge';
     if (r.cadrage === 'Remplir') c += ' l17-cover';
     else if (r.cadrage === 'Remplir (haut)') c += ' l17-cover-top';
     return c;
@@ -222,7 +224,7 @@
   function carte(r) {
     var meta = [r.auteur, fmtDate(r.date)].filter(Boolean).join(' · ');
     var badges = (r.type ? '<li><p class="fr-badge fr-badge--sm fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
-      (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--warning">' + esc(r.statut) + '</p></li>' : '') +
+      (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') +
       (r.niveau ? '<li><p class="fr-badge fr-badge--sm fr-badge--no-icon">' + esc(r.niveau) + '</p></li>' : '') +
       (r.duree ? '<li><p class="fr-badge fr-badge--sm fr-badge--no-icon">' + esc(r.duree) + '</p></li>' : '');
     return '<div class="fr-col-12 fr-col-md-6 fr-col-lg-4"><div class="fr-card fr-enlarge-link"><div class="fr-card__body"><div class="fr-card__content">' +
@@ -232,16 +234,22 @@
       (badges ? '<ul class="fr-badges-group">' + badges + '</ul>' : '') +
       (meta ? '<p class="fr-card__detail">' + esc(meta) + '</p>' : '') +
       '</div></div></div>' +
+      (!r.images.length && r.type === 'Assistant' ? '<div class="fr-card__header"><div class="fr-card__img"><div class="l17-visuel-assistant" aria-hidden="true">' + ASSISTANT_SVG + '<span>Assistant interactif</span></div></div></div>' : '') +
       (r.images.length ? '<div class="fr-card__header"><div class="fr-card__img"><img class="fr-responsive-img l17-vignette' + vignetteClasses(r) + '" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '"></div></div>' : '') +
       '</div></div>';
   }
   function rendreListe() {
     var types = ensemble('type'), tags = ensemble('tags');
-    if (state.type) {
-      var dispo = {};
-      state.rows.forEach(function (r) { if (r.type === state.type) r.tags.forEach(function (t) { dispo[t] = 1; }); });
-      tags = tags.filter(function (t) { return dispo[t]; });
-    }
+    var dispo = {};
+    state.rows.forEach(function (r) {
+      if (state.type && r.type !== state.type) return;
+      for (var f = 0; f < FACETTES.length; f++) {
+        var k = FACETTES[f][0], sel = state.fac[k];
+        if (sel && !(Array.isArray(r[k]) ? r[k].indexOf(sel) >= 0 : r[k] === sel)) return;
+      }
+      r.tags.forEach(function (t) { dispo[t] = 1; });
+    });
+    tags = tags.filter(function (t) { return dispo[t] || state.tags[t]; });
     var res = filtrer();
     var h = '<h1 class="fr-h3">' + esc(TITRE) + '</h1>';
     if (state.demo) h += '<div class="fr-alert fr-alert--info fr-alert--sm fr-mt-2w"><p>Aperçu avec des données fictives. Les ressources s’affichent lorsque cette page est ouverte depuis le catalogue Grist du Lab 17 bis.</p></div>';
@@ -258,19 +266,21 @@
       '<input class="fr-input" type="search" id="l17-q" placeholder="Rechercher une ressource" value="' + esc(state.q) + '">' +
       '<button class="fr-btn" type="button" id="l17-go" title="Rechercher">Rechercher</button></div></div>';
     h += '</div>';
+    var HFAC = '';
+    FACETTES.forEach(function (f) {
+      var vals = valeursFacette(f[0]);
+      if (!vals.length) return;
+      HFAC += '<div class="l17-facette" role="group" aria-label="' + esc(f[1]) + '"><span class="fr-text--sm l17-facette-label">' + esc(f[1]) + '</span>' +
+        '<button type="button" class="fr-tag" data-fac="' + f[0] + '" data-val="" aria-pressed="' + (!state.fac[f[0]]) + '">Tous</button>' +
+        vals.map(function (v) { return '<button type="button" class="fr-tag" data-fac="' + f[0] + '" data-val="' + esc(v) + '" aria-pressed="' + (state.fac[f[0]] === v) + '">' + esc(v) + '</button>'; }).join('') + '</div>';
+    });
+    h += HFAC;
     if (tags.length) {
-      h += '<div class="l17-tags" role="group" aria-label="Filtrer par mot-clé">' +
+      h += '<div class="l17-tags" role="group" aria-label="Filtrer par sujet précis">' +
         tags.map(function (t) {
           return '<button type="button" class="fr-tag" data-tag="' + esc(t) + '" aria-pressed="' + (state.tags[t] ? 'true' : 'false') + '">' + esc(t) + '</button>';
         }).join('') + '</div>';
     }
-    FACETTES.forEach(function (f) {
-      var vals = valeursFacette(f[0]);
-      if (!vals.length) return;
-      h += '<div class="l17-facette" role="group" aria-label="' + esc(f[1]) + '"><span class="fr-text--sm l17-facette-label">' + esc(f[1]) + '</span>' +
-        '<button type="button" class="fr-tag" data-fac="' + f[0] + '" data-val="" aria-pressed="' + (!state.fac[f[0]]) + '">Tous</button>' +
-        vals.map(function (v) { return '<button type="button" class="fr-tag" data-fac="' + f[0] + '" data-val="' + esc(v) + '" aria-pressed="' + (state.fac[f[0]] === v) + '">' + esc(v) + '</button>'; }).join('') + '</div>';
-    });
     h += '</div><p class="fr-text--sm l17-count" id="l17-count">' + res.length + ' ressource' + (res.length > 1 ? 's' : '') + '</p>';
     if (res.length) h += '<div class="fr-grid-row fr-grid-row--gutters" id="l17-grid">' + res.map(carte).join('') + '</div>';
     else h += '<p id="l17-grid">Aucune ressource ne correspond à votre recherche.</p>';
@@ -322,8 +332,8 @@
     var meta = [r.auteur, fmtDate(r.date)].filter(Boolean).join(' · ');
     var h = '<p><a class="fr-link" href="#" id="l17-back"><span aria-hidden="true">← </span>Retour au catalogue</a></p>' +
       '<h1 class="fr-h2">' + esc(r.titre) + '</h1>' +
-      ((r.type || r.statut) ? '<ul class="fr-badges-group">' + (r.type ? '<li><p class="fr-badge fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') + (r.statut ? '<li><p class="fr-badge fr-badge--warning">' + esc(r.statut) + '</p></li>' : '') + '</ul>' : '') +
-      (r.statut === 'Prototype' ? '<div class="fr-alert fr-alert--warning fr-alert--sm fr-mb-2w"><p>Prototype : contenu en cours de relecture. À utiliser avec discernement.</p></div>' : '') +
+      ((r.type || r.statut) ? '<ul class="fr-badges-group">' + (r.type ? '<li><p class="fr-badge fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') + (r.statut ? '<li><p class="fr-badge fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') + '</ul>' : '') +
+      (r.statut === 'Prototype' ? '<div class="fr-alert fr-alert--info fr-alert--sm fr-mb-2w"><p>Prototype : contenu en cours de relecture. À utiliser avec discernement.</p></div>' : '') +
       (r.images.length ? '<p><img class="fr-responsive-img l17-vignette-detail" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '"></p>' : '') +
       (meta ? '<p class="fr-text--sm l17-meta">' + esc(meta) + '</p>' : '') +
       (r.resume ? '<p class="fr-text--lead">' + esc(r.resume) + '</p>' : '') +

@@ -39,3 +39,6 @@ html, body { background: #fff; }
 .fr-card__img .l17-vignette.l17-cover{object-fit:cover;object-position:center}
 .fr-card__img .l17-vignette.l17-cover-top{object-fit:cover;object-position:top}
 .l17-vignette-detail{background:#fff}
+
+.fr-card__img .l17-vignette.l17-marge{box-sizing:border-box;padding:1.25rem 1.5rem 0;background:#fff}
+.l17-visuel-assistant{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;aspect-ratio:297/210;background:#e3e3fd;color:#000091;font-weight:700;font-size:.875rem;text-transform:uppercase;letter-spacing:.04em}
