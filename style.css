@@ -70,3 +70,16 @@ html, body { background: #fff; }
 .l17-vue canvas{display:block;width:100%;height:auto}
 .l17-badge-type{background:#DD4D37;color:#fff;font-weight:700}
 .l17-badge-famille{background:#F9DFD3;color:#1D1D1B}
+
+.l17-btn-orange{background:#DD4D37;color:#fff;font-weight:700}
+.l17-btn-orange:hover{background:#c2412d}
+.l17-hautfiche{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:1rem}
+.l17-lien-manuel{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem}
+.l17-lien-manuel input{flex:1;min-width:16rem}
+.l17-besoins{margin-bottom:1rem}
+.l17-besoins-titre{margin-bottom:.25rem}
+.l17-barre{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:1rem;margin:1rem 0}
+.l17-barre .l17-count{margin:0}
+.l17-tri{display:flex;align-items:center;gap:.5rem}
+.l17-tri .fr-label{margin:0;white-space:nowrap}
+.l17-tri .fr-select{margin:0}

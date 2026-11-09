@@ -15,6 +15,18 @@ var URL_GRIST = 'https://grist.numerique.gouv.fr/o/lab17bis/7NeiCJkTBt7J/Catalog
 var p = new URLSearchParams(location.search).get('u') || URL_GRIST;
 if (/^https:\/\/grist\.numerique\.gouv\.fr\//.test(p)) document.getElementById('f').src = p;
 else document.body.innerHTML = '<p style="font-family:sans-serif;padding:2rem">Adresse du catalogue non configurée.</p>';
+
+// Lien direct vers une fiche : la page du catalogue (dans Grist) demande la fiche à ouvrir,
+// et nous renvoie la fiche affichée pour que l'adresse du navigateur reste partageable.
+window.addEventListener('message', function (ev) {
+  var d = ev.data;
+  if (!d || typeof d.l17 !== 'string' || !/^https:\/\/(grist\.numerique\.gouv\.fr|lab17bis\.github\.io)$/.test(ev.origin)) return;
+  if (d.l17 === 'ready' && /^#r\/[^\s]+$/.test(location.hash)) {
+    ev.source.postMessage({ l17: 'goto', hash: location.hash }, ev.origin);
+  } else if (d.l17 === 'route' && (d.hash === '' || /^#r\/[^\s]+$/.test(d.hash))) {
+    history.replaceState(null, '', location.pathname + location.search + d.hash);
+  }
+});
 </script>
 </body>
 </html>

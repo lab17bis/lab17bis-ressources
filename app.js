@@ -39,8 +39,17 @@
     { name: 'statut', title: 'Statut', type: 'Choice,Text', optional: true, description: 'Ex. Prototype' }
   ];
 
+  var PAGE_PUBLIQUE = 'https://lab17bis.github.io/lab17bis-ressources/plein-ecran.html';
+  var CONTACT = ''; // adresse e-mail du Lab pour le bouton « Contribuer » (masqué tant qu'elle est vide)
+  var BESOINS = [
+    { id: 'comprendre', titre: 'Comprendre une situation', tags: ['Comprendre les usagers', 'Diagnostiquer', 'Voir plus clair', 'Comprendre une situation'] },
+    { id: 'cadrer', titre: 'Cadrer et décider', tags: ['Cadrer', 'Prioriser et décider', 'Sens et alignement'] },
+    { id: 'imaginer', titre: 'Imaginer et concevoir', tags: ['Améliorer et imaginer', 'Imaginer et concevoir', 'Concevoir et animer'] },
+    { id: 'echanger', titre: 'Faire échanger un groupe', tags: ['Échanger autrement', 'S’exprimer autrement', 'Se réunir autrement', 'Inviter à l’expression', 'Poser un cadre', 'Piloter la séance', 'Réguler la dynamique de groupe', 'Stimuler et structurer les échanges'] },
+    { id: 'piloter', titre: 'Formaliser et piloter le changement', tags: ['Formaliser et planifier', 'Écrire et formaliser', 'Piloter le changement'] }
+  ];
   var app = document.getElementById('app');
-  var state = { rows: [], q: '', type: '', tags: {}, fac: {}, mapped: false, demo: false };
+  var state = { rows: [], q: '', type: '', tags: {}, fac: {}, besoin: '', tri: 'melange', mapped: false, demo: false };
   var FACETTES = [];
   var tokenCache = null;
 
@@ -213,11 +222,46 @@
   function compteType(t) {
     return state.rows.filter(function (r) { return !t || r.type === t; }).length;
   }
+  function dansBesoin(r, id) {
+    var b = BESOINS.filter(function (x) { return x.id === id; })[0];
+    if (!b) return true;
+    var set = b.tags.map(norm);
+    return r.tags.some(function (t) { return set.indexOf(norm(t)) >= 0; });
+  }
+  function parTitre(a, b) { return a.titre.localeCompare(b.titre, 'fr'); }
+  function trier(lst) {
+    var l = lst.slice();
+    if (state.tri === 'nouveautes') {
+      return l.sort(function (a, b) { return (b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0) || parTitre(a, b); });
+    }
+    l.sort(parTitre);
+    if (state.tri === 'az' || state.type) return l;
+    // Mélange : on alterne les types (outil, méthode, assistant, conseil…) en gardant l'ordre alphabétique dans chaque type
+    var groupes = {}, ordre = [];
+    l.forEach(function (r) { var k = r.type || ''; if (!groupes[k]) { groupes[k] = []; ordre.push(k); } groupes[k].push(r); });
+    ordre.sort(function (x, y) { var ix = ORDRE.indexOf(x), iy = ORDRE.indexOf(y); return (ix < 0 ? 99 : ix) - (iy < 0 ? 99 : iy); });
+    var out = [], i = 0, reste = true;
+    while (reste) {
+      reste = false;
+      ordre.forEach(function (k) { if (groupes[k][i]) { out.push(groupes[k][i]); reste = true; } });
+      i++;
+    }
+    return out;
+  }
+  // « Nouveau » : publiée après le lancement du catalogue et depuis moins de 60 jours
+  function estNouveau(r) {
+    if (!r.date) return false;
+    var min = Infinity;
+    state.rows.forEach(function (x) { if (x.date && x.date.getTime() < min) min = x.date.getTime(); });
+    var t = r.date.getTime();
+    return t > min + 86400000 && Date.now() - t < 60 * 86400000;
+  }
   function filtrer() {
     var q = norm(state.q);
     var actifs = Object.keys(state.tags).filter(function (k) { return state.tags[k]; });
-    return state.rows.filter(function (r) {
+    var lst = state.rows.filter(function (r) {
       if (state.type && r.type !== state.type) return false;
+      if (state.besoin && !dansBesoin(r, state.besoin)) return false;
       for (var i = 0; i < actifs.length; i++) if (r.tags.indexOf(actifs[i]) < 0) return false;
       for (var f = 0; f < FACETTES.length; f++) {
         var k = FACETTES[f][0], sel = state.fac[k];
@@ -225,11 +269,8 @@
       }
       if (!q) return true;
       return norm([r.titre, r.resume, r.description, r.auteur, r.type, r.tags.join(' ')].join(' ')).indexOf(q) >= 0;
-    }).sort(function (a, b) {
-      var da = a.date ? a.date.getTime() : 0, db = b.date ? b.date.getTime() : 0;
-      var oa = ORDRE.indexOf(a.type), ob = ORDRE.indexOf(b.type);
-      return db - da || (oa < 0 ? 99 : oa) - (ob < 0 ? 99 : ob) || a.titre.localeCompare(b.titre, 'fr');
     });
+    return trier(lst);
   }
   var SVG_O = '<svg viewBox="0 0 64 64" width="72" height="72" fill="none" stroke="#000091" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">';
   var ICONES = {
@@ -264,7 +305,8 @@
     var meta = [r.participants, r.duree].filter(Boolean).join(' · ');
     var badges = (r.type ? '<li><p class="fr-badge fr-badge--sm l17-badge-type fr-badge--no-icon">' + esc(r.type) + '</p></li>' : '') +
       (r.tags.length === 1 ? '<li><p class="fr-badge fr-badge--sm l17-badge-famille fr-badge--no-icon">' + esc(r.tags[0]) + '</p></li>' : '') +
-      (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '');
+      (r.statut ? '<li><p class="fr-badge fr-badge--sm fr-badge--yellow-tournesol fr-badge--no-icon">' + esc(r.statut) + '</p></li>' : '') +
+      (estNouveau(r) ? '<li><p class="fr-badge fr-badge--sm fr-badge--green-emeraude">Nouveau</p></li>' : '');
     return '<div class="fr-col-12 fr-col-md-6 fr-col-lg-4"><div class="fr-card fr-enlarge-link"><div class="fr-card__body"><div class="fr-card__content">' +
       '<h3 class="fr-card__title"><a href="#r/' + esc(r.id) + '">' + esc(r.titre) + '</a></h3>' +
       ((r.resume || r.description) ? '<p class="fr-card__desc l17-clamp">' + esc(r.resume || r.description) + '</p>' : '') +
@@ -293,6 +335,8 @@
     var h = '<h1 class="fr-h3">' + esc(TITRE) + '</h1>';
     if (state.demo) h += '<div class="fr-alert fr-alert--info fr-alert--sm fr-mt-2w"><p>Aperçu avec des données fictives. Les ressources s’affichent lorsque cette page est ouverte depuis le catalogue Grist du Lab 17 bis.</p></div>';
     h += '<div class="l17-filters">';
+    h += '<div class="l17-besoins" role="group" aria-label="Je veux…"><p class="fr-text--sm l17-besoins-titre"><strong>Je veux…</strong></p><div class="l17-tags">' +
+      BESOINS.map(function (b) { return '<button type="button" class="fr-tag" data-besoin="' + b.id + '" aria-pressed="' + (state.besoin === b.id) + '">' + esc(b.titre) + '</button>'; }).join('') + '</div></div>';
     if (types.length > 1) {
       h += '<div class="l17-sections" role="group" aria-label="Sections">' +
         '<button type="button" class="fr-btn ' + (state.type ? 'fr-btn--tertiary' : '') + ' fr-btn--sm" data-section="" aria-pressed="' + (!state.type) + '">Tout (' + compteType('') + ')</button>' +
@@ -321,7 +365,9 @@
           return '<button type="button" class="fr-tag" data-tag="' + esc(t) + '" aria-pressed="' + (state.tags[t] ? 'true' : 'false') + '">' + esc(t) + '</button>';
         }).join('') + '</div>';
     }
-    h += '</div><p class="fr-text--sm l17-count" id="l17-count">' + res.length + ' ressource' + (res.length > 1 ? 's' : '') + '</p>';
+    h += '</div><div class="l17-barre"><p class="fr-text--sm l17-count" id="l17-count" role="status">' + res.length + ' ressource' + (res.length > 1 ? 's' : '') + '</p>' +
+      '<div class="fr-select-group l17-tri"><label class="fr-label" for="l17-tri">Trier par</label><select class="fr-select" id="l17-tri">' +
+      [['melange', 'Mélange'], ['nouveautes', 'Plus récentes'], ['az', 'Ordre alphabétique']].map(function (o) { return '<option value="' + o[0] + '"' + (state.tri === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div></div>';
     if (res.length) h += '<div class="fr-grid-row fr-grid-row--gutters" id="l17-grid">' + res.map(carte).join('') + '</div>';
     else h += '<p id="l17-grid">Aucune ressource ne correspond à votre recherche.</p>';
     app.innerHTML = h;
@@ -332,6 +378,11 @@
       state.q = q.value;
       majResultats();
     });
+    Array.prototype.forEach.call(app.querySelectorAll('[data-besoin]'), function (b) {
+      b.addEventListener('click', function () { var k = b.getAttribute('data-besoin'); state.besoin = state.besoin === k ? '' : k; state.tags = {}; rendreListe(); });
+    });
+    var tri = document.getElementById('l17-tri');
+    if (tri) tri.addEventListener('change', function () { state.tri = tri.value; majResultats(); });
     Array.prototype.forEach.call(app.querySelectorAll('[data-section]'), function (b) {
       b.addEventListener('click', function () { state.type = b.getAttribute('data-section'); rendreListe(); });
     });
@@ -483,7 +534,10 @@
       ? '<img class="fr-responsive-img l17-vignette-detail' + (r.type === 'Conseil' ? ' l17-bg-gris' : '') + '" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '">'
       : (r.type === 'Assistant' ? (carrousel(r.titre) || '<div class="l17-visuel-assistant" aria-hidden="true">' + iconeAssistant(r.titre) + '<span>Assistant interactif</span></div>') : '');
     if (fichePdf && visuel) visuel = '<div id="l17-visuel-fiche">' + visuel + '</div>';
-    var h = '<p><a class="fr-link" href="#" id="l17-back"><span aria-hidden="true">← </span>Retour au catalogue</a></p>' +
+    var h = '<div class="l17-hautfiche"><a class="fr-link" href="#" id="l17-back"><span aria-hidden="true">← </span>Retour au catalogue</a>' +
+      '<button type="button" class="fr-btn fr-btn--tertiary fr-btn--sm fr-icon-links-fill fr-btn--icon-left" id="l17-copier">Copier le lien de cette fiche</button></div>' +
+      '<p class="fr-text--sm l17-lien-manuel" id="l17-lien-manuel" hidden><label for="l17-lien-champ">Copiez ce lien :</label> <input class="fr-input" id="l17-lien-champ" readonly></p>' +
+      '<p class="fr-sr-only" role="status" id="l17-statut-copie"></p>' +
       '<h1 class="fr-h2">' + esc(r.titre) + '</h1>' +
       '<ul class="fr-badges-group">' + (r.type ? '<li><p class="fr-badge l17-badge-type fr-badge--no-icon">' + esc(r.type) + '</p></li>' : '') +
         (famille ? '<li><p class="fr-badge l17-badge-famille fr-badge--no-icon">' + esc(famille) + '</p></li>' : '') +
@@ -517,6 +571,7 @@
     }
     app.innerHTML = h;
     document.getElementById('l17-back').addEventListener('click', function (e) { e.preventDefault(); location.hash = ''; });
+    document.getElementById('l17-copier').addEventListener('click', function () { copierLien(lienFiche(r.id)); });
     Array.prototype.forEach.call(app.querySelectorAll('[data-file]'), function (b) {
       var fid = b.getAttribute('data-file');
       infoFichier(fid).then(function (info) {
@@ -531,6 +586,41 @@
     window.scrollTo(0, 0);
   }
 
+  // ---------- lien partageable + échange avec la page d'accueil plein écran ----------
+  function lienFiche(id) { return PAGE_PUBLIQUE + '#r/' + encodeURIComponent(id); }
+  function copierLien(url) {
+    var ok = false;
+    try {
+      var t = document.createElement('textarea');
+      t.value = url; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select(); ok = document.execCommand('copy'); t.remove();
+    } catch (e) { ok = false; }
+    var st = document.getElementById('l17-statut-copie'), man = document.getElementById('l17-lien-manuel'), ch = document.getElementById('l17-lien-champ'), b = document.getElementById('l17-copier');
+    if (ok) {
+      if (st) st.textContent = 'Lien copié dans le presse-papiers';
+      if (b) { b.textContent = 'Lien copié ✓'; setTimeout(function () { b.textContent = 'Copier le lien de cette fiche'; }, 2500); }
+    } else if (man && ch) {
+      ch.value = url; man.hidden = false; ch.focus(); ch.select();
+    }
+  }
+  function versParent(msg) { try { if (window.top && window.top !== window) window.top.postMessage(msg, '*'); } catch (e) {} }
+  window.addEventListener('message', function (ev) {
+    var d = ev.data;
+    if (d && ev.source === window.top && d.l17 === 'goto' && typeof d.hash === 'string' && /^#r\/[^\s]+$/.test(d.hash) && !location.hash) location.hash = d.hash;
+  });
+  function mailContribution(titre) {
+    var sujet = '[Ressources du Lab 17 bis] ' + (titre ? 'À propos de « ' + titre + ' »' : 'Contribution');
+    var corps = 'Je souhaite (supprimer les mentions inutiles) :\n- signaler un problème ou une coquille\n- proposer une amélioration\n- proposer une ressource\n- contacter le Lab 17 bis\n\nMon message :\n';
+    return 'mailto:' + CONTACT + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
+  }
+  function majContribuer(titre) {
+    var a = document.getElementById('l17-contrib');
+    if (!a) return;
+    if (!CONTACT) { a.hidden = true; return; }
+    a.hidden = false; a.href = mailContribution(titre);
+  }
+
+  var dernierMode = '';
   function rendre() {
     if (!state.mapped) {
       app.innerHTML = '<div class="fr-alert fr-alert--info"><h1 class="fr-alert__title">Associez les colonnes</h1>' +
@@ -538,7 +628,15 @@
       return;
     }
     var m = /^#r\/(.+)$/.exec(location.hash);
+    var mode = m ? 'fiche' : 'liste';
     if (m) rendreFiche(decodeURIComponent(m[1])); else rendreListe();
+    var courant = m ? state.rows.filter(function (x) { return String(x.id) === decodeURIComponent(m[1]); })[0] : null;
+    majContribuer(courant ? courant.titre : '');
+    versParent({ l17: 'route', hash: courant ? '#r/' + encodeURIComponent(courant.id) : '' });
+    if (mode !== dernierMode) {
+      dernierMode = mode;
+      var t = app.querySelector('h1'); if (t) { t.setAttribute('tabindex', '-1'); try { t.focus({ preventScroll: true }); } catch (e) {} }
+    }
   }
   window.addEventListener('hashchange', rendre);
   var home = document.getElementById('l17-home');
@@ -561,6 +659,7 @@
     });
   }
   function init() {
+    versParent({ l17: 'ready' });
     if (window.grist && window.self !== window.top) demarrerGrist();
     else demarrerDemo();
   }
