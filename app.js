@@ -380,7 +380,7 @@
     }
     var prep = '', et = r.etapes;
     if (/^Avant\s*:/.test(et[0])) { prep = '<p class="l17-avant"><strong>Avant de commencer :</strong> ' + esc(et[0].replace(/^Avant\s*:\s*/, '')) + '</p>'; et = et.slice(1); }
-    return bloc('Comment faire', prep + '<ol class="l17-etapes">' + et.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>');
+    return bloc(r.type === 'Assistant' ? 'Le parcours' : 'Comment faire', prep + '<ol class="l17-etapes">' + et.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>');
   }
   function rendreFiche(id) {
     var r = state.rows.filter(function (x) { return String(x.id) === String(id); })[0];
@@ -406,7 +406,7 @@
       bloc('La situation', r.situation ? '<p>' + esc(r.situation) + '</p>' : '') +
       bloc('Le principe à suivre', r.principe ? '<p>' + esc(r.principe) + '</p>' : '') +
       bloc('Présentation', !r.situation && r.description && r.description !== r.resume ? '<p class="l17-pre">' + esc(r.description) + '</p>' : '') +
-      bloc('Matériel et conditions de réussite', liste(r.materiel, 'l17-liste')) +
+      bloc(r.type === 'Assistant' ? 'Pour l\'utiliser' : 'Matériel et conditions de réussite', liste(r.materiel, 'l17-liste')) +
       etapesHtml(r) +
       bloc('La posture', r.posture ? '<p>' + esc(r.posture) + '</p>' : '') +
       (r.vigilance.length ? '<div class="fr-callout fr-callout--yellow-tournesol l17-vigilance"><h3 class="fr-callout__title">' + (r.vigilance.length > 1 ? 'Points de vigilance' : 'Point de vigilance') + '</h3>' +
