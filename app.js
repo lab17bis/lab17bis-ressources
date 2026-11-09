@@ -410,6 +410,51 @@
       });
     });
   }
+  var pdfjsPret = null;
+  function chargerPdfjs() {
+    if (pdfjsPret) return pdfjsPret;
+    pdfjsPret = new Promise(function (ok, ko) {
+      if (window.pdfjsLib) return ok(window.pdfjsLib);
+      var sc = document.createElement('script');
+      sc.src = 'assets/pdfjs/pdf.min.js';
+      sc.onload = function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'assets/pdfjs/pdf.worker.min.js'; ok(window.pdfjsLib); };
+      sc.onerror = function () { ko(new Error('pdfjs')); };
+      document.head.appendChild(sc);
+    });
+    pdfjsPret.catch(function () { pdfjsPret = null; });
+    return pdfjsPret;
+  }
+  function afficherFiche(r) {
+    var zone = document.getElementById('l17-fiche');
+    if (!zone) return;
+    var ids = r.fichiers.slice();
+    var suite = Promise.resolve(null);
+    ids.forEach(function (id) {
+      suite = suite.then(function (trouve) {
+        if (trouve) return trouve;
+        return infoFichier(id).then(function (info) { return /\.pdf$/i.test(info.fileName || '') ? id : null; });
+      });
+    });
+    suite.then(function (id) {
+      if (!id) { zone.remove(); return; }
+      return Promise.all([chargerPdfjs(), blobDe(id)]).then(function (x) {
+        return x[0].getDocument(x[1]).promise;
+      }).then(function (pdf) {
+        var p = Promise.resolve();
+        for (var n = 1; n <= pdf.numPages; n++) (function (n) {
+          p = p.then(function () { return pdf.getPage(n); }).then(function (page) {
+            var vp = page.getViewport({ scale: 2 });
+            var cv = document.createElement('canvas');
+            cv.width = vp.width; cv.height = vp.height; cv.className = 'l17-page-fiche';
+            cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Fiche complète, page ' + n + ' sur ' + pdf.numPages);
+            zone.querySelector('.l17-fiche-pages').appendChild(cv);
+            return page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+          });
+        })(n);
+        return p;
+      }).then(function () { var t = zone.querySelector('.l17-fiche-attente'); if (t) t.remove(); });
+    }).catch(function (e) { try { console.warn('[l17] fiche', e && e.message); } catch (x) {} zone.remove(); });
+  }
   function rendreFiche(id) {
     var r = state.rows.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) { location.hash = ''; return; }
@@ -442,6 +487,7 @@
       bloc(r.type === 'Conseil' ? 'À retenir' : 'Ce que vous obtenez', r.resultat ? '<p>' + esc(r.resultat) + '</p>' : '') +
       (r.usages ? '<p class="l17-usages"><strong>Aussi utile pour :</strong> ' + esc(r.usages) + '</p>' : '') +
       '</div></div>';
+    if (r.type === 'Méthode' && r.fichiers.length) h += '<div id="l17-fiche"><h2 class="fr-h5 fr-mt-3w">La fiche complète</h2><p class="fr-text--sm l17-fiche-attente">Chargement de la fiche…</p><div class="l17-fiche-pages"></div></div>';
     if (r.fichiers.length || r.lien) {
       h += '<h2 class="fr-h5 fr-mt-3w">Télécharger et consulter</h2><ul class="l17-files" id="l17-files">';
       r.fichiers.forEach(function (f) {
@@ -461,6 +507,7 @@
       });
     });
     brancherCarrousel();
+    if (r.type === 'Méthode') afficherFiche(r);
     chargerImages();
     window.scrollTo(0, 0);
   }
