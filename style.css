@@ -17,7 +17,7 @@ html, body { background: #fff; }
 .l17-sections{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
 .l17-vignette{object-fit:cover;object-position:top;background:#f6f6f6}
 .l17-vignette-detail{width:100%;max-width:560px;height:auto;border:1px solid #ddd}
-.fr-card__img .l17-vignette{display:block;width:100%;height:auto;max-height:none;aspect-ratio:297/210;object-fit:contain;object-position:center;background:#f6f6f6}
+.fr-card__img .l17-vignette{display:block;width:100%;height:auto;max-height:none;aspect-ratio:297/210;object-fit:contain;object-position:center;background:#fff}
 .fr-card__img{overflow:visible}
 .l17-facette{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.75rem}
 .l17-facette-label{font-weight:700;min-width:4.5rem}
@@ -34,3 +34,8 @@ html, body { background: #fff; }
 .lab-header .fr-header__body { padding: 0; }
 .fr-footer { margin-top: 3rem; }
 .acc-memo summary { cursor: pointer; }
+
+.fr-card__img .l17-vignette.l17-bg-gris{background:#f6f6f6}
+.fr-card__img .l17-vignette.l17-cover{object-fit:cover;object-position:center}
+.fr-card__img .l17-vignette.l17-cover-top{object-fit:cover;object-position:top}
+.l17-vignette-detail{background:#fff}

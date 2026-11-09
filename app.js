@@ -25,6 +25,7 @@
     { name: 'participants', title: 'Taille du groupe', type: 'Choice,Text', optional: true, description: 'Ex. 5 à 12 personnes' },
     { name: 'phase', title: 'Quand l’utiliser', type: 'ChoiceList,Text', optional: true, description: 'Phase du projet' },
     { name: 'format', title: 'Format', type: 'Choice,Text', optional: true, description: 'Présentiel / Distanciel / Les deux' },
+    { name: 'cadrage', title: 'Cadrage de la vignette', type: 'Choice,Text', optional: true, description: 'Remplir / Remplir (haut) ; vide = image entière' },
     { name: 'statut', title: 'Statut', type: 'Choice,Text', optional: true, description: 'Ex. Prototype' }
   ];
 
@@ -82,6 +83,7 @@
       lien: r.lien ? absUrl(r.lien) : null,
       images: toList(r.image),
       statut: r.statut ? String(r.statut) : '',
+      cadrage: r.cadrage ? String(r.cadrage) : '',
       resume: r.resume || '',
       niveau: r.niveau ? String(r.niveau) : '',
       duree: r.duree ? String(r.duree) : '',
@@ -210,6 +212,13 @@
       return db - da || (oa < 0 ? 99 : oa) - (ob < 0 ? 99 : ob) || a.titre.localeCompare(b.titre, 'fr');
     });
   }
+  function vignetteClasses(r) {
+    var c = '';
+    if (r.type === 'Conseil') c += ' l17-bg-gris';
+    if (r.cadrage === 'Remplir') c += ' l17-cover';
+    else if (r.cadrage === 'Remplir (haut)') c += ' l17-cover-top';
+    return c;
+  }
   function carte(r) {
     var meta = [r.auteur, fmtDate(r.date)].filter(Boolean).join(' · ');
     var badges = (r.type ? '<li><p class="fr-badge fr-badge--sm fr-badge--blue-ecume">' + esc(r.type) + '</p></li>' : '') +
@@ -223,7 +232,7 @@
       (badges ? '<ul class="fr-badges-group">' + badges + '</ul>' : '') +
       (meta ? '<p class="fr-card__detail">' + esc(meta) + '</p>' : '') +
       '</div></div></div>' +
-      (r.images.length ? '<div class="fr-card__header"><div class="fr-card__img"><img class="fr-responsive-img l17-vignette" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '"></div></div>' : '') +
+      (r.images.length ? '<div class="fr-card__header"><div class="fr-card__img"><img class="fr-responsive-img l17-vignette' + vignetteClasses(r) + '" data-att="' + esc(r.images[0]) + '" alt="" src="' + PIXEL + '"></div></div>' : '') +
       '</div></div>';
   }
   function rendreListe() {
