@@ -35,6 +35,7 @@
     { name: 'materiel', title: 'Matériel et conditions (une par ligne)', type: 'Text', optional: true },
     { name: 'resultat', title: 'Ce que vous obtenez / à retenir', type: 'Text', optional: true },
     { name: 'cadrage', title: 'Cadrage de la vignette', type: 'Choice,Text', optional: true, description: 'Remplir / Remplir (haut) ; vide = image entière' },
+    { name: 'valide', title: 'Publié (case à cocher)', type: 'Bool', optional: true, description: 'Décochée : la fiche n’apparaît pas dans le catalogue' },
     { name: 'statut', title: 'Statut', type: 'Choice,Text', optional: true, description: 'Ex. Prototype' }
   ];
 
@@ -555,7 +556,7 @@
       var rows = grist.mapColumnNames(recs);
       if (!rows) { state.mapped = false; state.rows = []; rendre(); return; }
       state.mapped = true;
-      state.rows = rows.map(normaliser);
+      state.rows = rows.filter(function (x) { return !('valide' in x) || x.valide === true || x.valide === undefined; }).map(normaliser);
       rendre();
     });
   }
