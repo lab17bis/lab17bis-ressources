@@ -1,0 +1,13 @@
+/* Surcouche propre au catalogue des interventions (s'ajoute à ../style.css) */
+.l17-statuts{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0 .5rem}
+.l17-une{margin:1.5rem 0 2rem;padding:1.5rem;background:#f9f6f2;border-left:4px solid #DD4D37}
+.l17-une h2{margin-bottom:1rem}
+.l17-badge-une{background:#DD4D37;color:#fff;font-weight:700}
+.l17-badge-init{background:#E3E3FD;color:#000091}
+.l17-badge-cours{background:#B8FEC9;color:#005F2E;font-weight:700}
+.l17-annee{color:#666;margin:0 0 .5rem}
+.l17-citation{margin:1.5rem 0}
+.l17-tags-themes{margin-top:1.5rem}
+.l17-section-titre{margin:2rem 0 1rem}
+.l17-infos{padding:0}
+.l17-infos dt,.l17-infos dd{margin-left:0;padding-left:0}

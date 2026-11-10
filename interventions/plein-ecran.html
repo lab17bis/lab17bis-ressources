@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interventions du Lab 17 bis</title>
+<style>html,body{height:100%;margin:0}iframe{border:0;width:100%;height:100%;display:block}</style>
+</head>
+<body>
+<iframe id="f" title="Interventions du Lab 17 bis" allow="clipboard-write; fullscreen" src="about:blank"></iframe>
+<script>
+// À renseigner une fois le document Grist créé et partagé :
+// copier l'adresse de la page du widget et ajouter ?embed=true à la fin.
+var URL_GRIST = '';
+var p = new URLSearchParams(location.search).get('u') || URL_GRIST;
+if (/^https:\/\/grist\.numerique\.gouv\.fr\//.test(p)) document.getElementById('f').src = p;
+else document.body.innerHTML = '<p style="font-family:sans-serif;padding:2rem">Adresse du catalogue non configurée.</p>';
+
+// Lien direct vers une fiche : même échange que le catalogue de ressources
+window.addEventListener('message', function (ev) {
+  var d = ev.data;
+  if (!d || typeof d.l17 !== 'string' || !/^https:\/\/(grist\.numerique\.gouv\.fr|lab17bis\.github\.io)$/.test(ev.origin)) return;
+  if (d.l17 === 'ready' && /^#r\/[^\s]+$/.test(location.hash)) {
+    ev.source.postMessage({ l17: 'goto', hash: location.hash }, ev.origin);
+  } else if (d.l17 === 'route' && (d.hash === '' || /^#r\/[^\s]+$/.test(d.hash))) {
+    history.replaceState(null, '', location.pathname + location.search + d.hash);
+  }
+});
+</script>
+</body>
+</html>
