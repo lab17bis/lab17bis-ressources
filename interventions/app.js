@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var TITRE = 'Interventions du Lab 17 bis';
+  var TITRE = 'Catalogue des interventions';
   var PAGE_PUBLIQUE = 'https://lab17bis.github.io/lab17bis-ressources/interventions/plein-ecran.html';
   var CONTACT = 'lab17bis@ac-reims.fr';
 
