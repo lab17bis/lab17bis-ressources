@@ -40,7 +40,7 @@
   ];
 
   var PAGE_PUBLIQUE = 'https://lab17bis.github.io/lab17bis-ressources/plein-ecran.html';
-  var CONTACT = ''; // adresse e-mail du Lab pour le bouton « Contribuer » (masqué tant qu'elle est vide)
+  var CONTACT = 'lab17bis@ac-reims.fr'; // adresse e-mail du Lab pour le bouton « Contribuer » (masqué tant qu'elle est vide)
   var BESOINS = [
     { id: 'comprendre', titre: 'Comprendre une situation', tags: ['Comprendre les usagers', 'Diagnostiquer', 'Voir plus clair', 'Comprendre une situation'] },
     { id: 'cadrer', titre: 'Cadrer et décider', tags: ['Cadrer', 'Prioriser et décider', 'Sens et alignement'] },
